@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mscore-web-engine · Demo</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; }
+  header {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    border-bottom: 1px solid #ccc; background: #fafafa; font-size: 14px;
+  }
+  header .title { font-weight: 600; margin-right: auto; }
+  header .state { opacity: 0.7; margin-right: 8px; }
+  button { padding: 4px 12px; font: inherit; cursor: pointer; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  main { flex: 1; position: relative; }
+  #engine-host { position: absolute; inset: 0; }
+  #placeholder {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    text-align: center; color: #666; padding: 24px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="title">mscore-web-engine demo</span>
+  <span class="state" id="state">idle</span>
+  <button id="open" type="button" disabled>Open score file</button>
+  <button id="play" type="button" disabled>Play (gesture)</button>
+  <button id="save" type="button" disabled>Save .mscz</button>
+</header>
+<main>
+  <div id="placeholder">
+    <div>
+      <p>Loading engine… (MuseScoreStudio.wasm ≈ 82&nbsp;MB — be patient on first load)</p>
+      <p style="opacity:.7">Use “Open score file” to load a .mscz / .mscx / .musicxml, then Play.</p>
+    </div>
+  </div>
+  <div id="engine-host"></div>
+</main>
+
+<script type="module">
+  import { MuseScoreWeb } from '../../src/index.js';
+
+  const el = {
+    state: document.getElementById('state'),
+    open: document.getElementById('open'),
+    play: document.getElementById('play'),
+    save: document.getElementById('save'),
+    placeholder: document.getElementById('placeholder'),
+    host: document.getElementById('engine-host'),
+  };
+  const setState = (text) => { el.state.textContent = text; };
+
+  const mscore = new MuseScoreWeb({
+    container: el.host,
+    engineUrl: '../../engine/viewer.html',
+    onReady: (v) => {
+      setState('engine ready' + (v.version ? ' · v' + v.version : ''));
+      el.placeholder.remove();
+      el.open.disabled = false;
+      el.play.disabled = false;
+      el.save.disabled = false;
+    },
+    onScoreLoaded: (p) => setState('score loaded' + (p.name ? ': ' + p.name : '')),
+    onSaved: (p) => {
+      if (!p || !p.data) { setState('save: no data'); return; }
+      const blob = new Blob([p.data], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (p.name || 'score') + '.mscz';
+      a.click();
+      URL.revokeObjectURL(url);
+      setState('saved & downloaded');
+    },
+    onError: (e) => setState('error: ' + (e && e.message ? e.message : String(e))),
+    onLog: (l) => console.log('[engine]', l.line),
+  });
+
+  mscore.mount();
+
+  let fileInput = null;
+  el.open.addEventListener('click', () => {
+    if (!fileInput) {
+      fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.mscz,.mscx,.musicxml,.xml,.mxl';
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        const buffer = new Uint8Array(await file.arrayBuffer());
+        await mscore.load({ name: file.name.replace(/\.[^.]+$/, ''), data: buffer });
+        fileInput.value = '';
+      });
+    }
+    fileInput.click();
+  });
+
+  el.play.addEventListener('click', () => mscore.play());
+  el.save.addEventListener('click', () => mscore.save());
+</script>
+</body>
+</html>

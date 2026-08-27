@@ -1,0 +1,159 @@
+<!doctype html>
+<!--
+  mscore-web-engine viewer (generic host page)
+
+  Loads the MuseScore 4.x WASM engine and exposes a minimal engine-agnostic
+  message protocol over postMessage, so any embedding page (plain HTML,
+  React app, or plugin iframe) can drive it.
+
+  Protocol (host -> engine):
+    { source: 'mscore-web-engine-host', type: 'load-score', payload: { name?: string, data: Uint8Array } }
+    { source: 'mscore-web-engine-host', type: 'save-score' }
+
+  Protocol (engine -> host):
+    { source: 'mscore-web-engine', type: 'ready',        payload: { version: string } }
+    { source: 'mscore-web-engine', type: 'score-loaded', payload: { name?: string } }
+    { source: 'mscore-web-engine', type: 'saved',        payload: { name?: string, data: Uint8Array } }
+    { source: 'mscore-web-engine', type: 'error',        payload: { message: string } }
+    { source: 'mscore-web-engine', type: 'log',          payload: { line: string } }
+
+  window.muapi (the low-level loader API) is exposed for manual debugging.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height, user-scalable=0"/>
+    <title>MuseScore Web Engine</title>
+    <style>
+      html, body { padding: 0; margin: 0; overflow: hidden; height: 100% }
+      #spinner { display: flex; justify-content: center; align-items: center; height: 100vh; }
+      #screen { width: 100%; height: 100%; }
+      #save-score {
+        position: fixed; top: 8px; right: 8px; z-index: 999;
+        padding: 4px 12px; font: 12px system-ui; cursor: pointer;
+        background: #f5f5f5; border: 1px solid #ccc; border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <figure id="spinner">
+      <center style="margin-top:1.5em; line-height:150%">
+        <strong>MuseScore Web Engine</strong>
+        <div id="status"></div>
+        <noscript>JavaScript is disabled. Please enable JavaScript to use this application.</noscript>
+      </center>
+    </figure>
+    <div id="screen"></div>
+
+    <button id="save-score" title="Save the current score (posts 'saved' to the host)">Save</button>
+
+    <script type="module">
+      import createMuApi from "./distr/muapi.js";
+
+      const spinner = document.querySelector('#spinner');
+      const screen = document.querySelector('#screen');
+      const status = document.querySelector('#status');
+      let currentName = '';
+
+      const post = (type, payload) => {
+        if (window.parent !== window) {
+          window.parent.postMessage({ source: 'mscore-web-engine', type: type, payload: payload || {} }, '*');
+        }
+      };
+
+      // Surface fatal signals on the page itself so iframe debugging needs no devtools.
+      const lastError = (label, error) => {
+        const text = error && (error.stack || error.message) ? (error.stack || error.message) : String(error);
+        console.error('[viewer]', label, text);
+        status.innerHTML = label + ': ' + String(text).split('\n').slice(0, 6).join(' | ');
+        post('error', { message: label + ': ' + String(text).split('\n').slice(0, 6).join(' | ') });
+      };
+      window.addEventListener('error', event => lastError('window error', event.error || event.message));
+      window.addEventListener('unhandledrejection', event => lastError('unhandledrejection', event.reason));
+
+      const showUi = (ui) => {
+        [spinner, screen].forEach(element => element.style.display = 'none');
+        if (screen === ui) screen.style.position = 'default';
+        ui.style.display = 'block';
+      }
+
+      try {
+        showUi(spinner);
+        status.innerHTML = 'Loading engine...';
+
+        window.muapi = await createMuApi({
+          screen: screen,
+          onLoaded: () => {
+            console.log('[viewer] engine loaded');
+            post('ready', { version: '4.7.4' });
+            showUi(screen);
+          },
+          onLog: line => {
+            status.innerHTML = 'wasm: ' + String(line).split('\n').slice(-2).join(' | ');
+            post('log', { line: String(line) });
+          },
+          onExit: function(exitData) {
+            console.error('[viewer] onExit', JSON.stringify(exitData), exitData);
+            status.innerHTML = 'Application exit';
+            status.innerHTML += exitData.code !== undefined ? ' with code ' + exitData.code : '';
+            status.innerHTML += exitData.text !== undefined ? ' (' + exitData.text + ')' : '';
+            status.innerHTML += ' \u2014 see console for details';
+            showUi(spinner);
+            post('error', { message: 'engine exited' + (exitData.text ? ': ' + exitData.text : '') });
+          },
+          onProjectSaved: async function(data) {
+            console.log('[viewer] onProjectSaved len:', data.length);
+            post('saved', { name: currentName, data: data });
+          }
+        });
+
+        // Audio must start from a user gesture.
+        document.addEventListener('click', window.muapi.startAudioProcessing, { once: true });
+
+        // Manual save button (handy when embedding without a host page).
+        document.getElementById('save-score').addEventListener('click', () => {
+          if (window.muapi && window.muapi.Module && typeof window.muapi.Module._saveScore === 'function') {
+            window.muapi.Module._saveScore();
+          } else {
+            console.warn('[viewer] engine not ready for save');
+          }
+        });
+
+        // Host command channel.
+        window.addEventListener('message', async (event) => {
+          const msg = event.data;
+          if (!msg || msg.source !== 'mscore-web-engine-host') return;
+          if (msg.type === 'load-score') {
+            const payload = msg.payload || {};
+            const data = payload.data;
+            if (!data || !window.muapi) {
+              console.warn('[viewer] load-score ignored (no data or engine not ready)');
+              return;
+            }
+            try {
+              await window.muapi.loadScoreData(data instanceof Uint8Array ? data : new Uint8Array(data));
+              currentName = payload.name || '';
+              console.log('[viewer] loaded score:', currentName || '(unnamed)');
+              post('score-loaded', { name: currentName });
+            } catch (error) {
+              console.error('[viewer] load-score failed', error);
+              post('error', { message: error instanceof Error ? error.message : String(error) });
+            }
+          } else if (msg.type === 'save-score') {
+            if (window.muapi && window.muapi.Module && typeof window.muapi.Module._saveScore === 'function') {
+              window.muapi.Module._saveScore();
+            } else {
+              console.warn('[viewer] engine not ready for save');
+              post('error', { message: 'engine not ready for save' });
+            }
+          }
+        });
+      } catch (e) {
+        console.error(e);
+        console.error(e.stack);
+        lastError('load failed', e);
+      }
+    </script>
+    <script src="MuseScoreStudio.js"></script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+{
+  "name": "mscore-web-engine",
+  "version": "0.1.0",
+  "description": "Self-hosted MuseScore 4.x WebAssembly engine — load, edit, play, save scores in the browser. Independent open-source distribution of the engine used by the score-collab plugin.",
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "author": "YunoLab",
+  "keywords": [
+    "musescore",
+    "music",
+    "score",
+    "notation",
+    "webassembly",
+    "wasm",
+    "qt",
+    "gpl"
+  ],
+  "files": [
+    "engine",
+    "src",
+    "examples",
+    "scripts",
+    "docs",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "serve": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "check:assets": "node scripts/check-assets.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

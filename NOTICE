@@ -1,0 +1,75 @@
+mscore-web-engine — Third-Party Notices
+=======================================
+
+This distribution bundles the following third-party components.  Each stays
+under its own license; this file records authorship, license, and source
+availability for every bundled artifact.
+
+1. MuseScore Studio engine (WebAssembly build)
+----------------------------------------------
+
+   Upstream: https://github.com/musescore/MuseScore (4.7.4)
+   License:  GPL-3.0-only
+   Bundled:  engine/MuseScoreStudio.wasm, engine/MuseScoreStudio.js,
+             engine/distr/*, engine/viewer.html (JS glue),
+             engine/MuseAudio.js (audio engine wasm, built separately)
+
+   The WASM artifacts were compiled from MuseScore 4.7.4 source with local
+   patches to support Qt 6.7.3 / emsdk 3.1.50 / Emscripten.  The full patch
+   list and rebuild instructions live in docs/BUILDING.md.
+
+   Source availability: upstream tarball
+   https://github.com/musescore/MuseScore/archive/refs/tags/v4.7.4.tar.gz
+   plus the patch set recorded in docs/BUILDING.md (offered on request if
+   the patch files are not shipped in this distribution).
+
+2. Qt for WebAssembly runtime
+-----------------------------
+
+   Upstream: https://www.qt.io (6.7.3, wasm_singlethread)
+   License:  LGPL-3.0-only (runtime components; see Qt licensing)
+   Bundled:  statically linked inside engine/MuseScoreStudio.wasm
+
+   Qt is used under the LGPLv3; a relinkable copy of the Qt libraries used
+   to build this engine can be obtained by following the build
+   instructions in docs/BUILDING.md.
+
+3. MuseScore_General.sf2 soundfont ("MS Basic")
+--------------------------------------------------
+
+   Upstream: https://musescore.org/en/soundfonts
+   License:  MIT (see engine/sound/MS Basic_License.md)
+   Bundled:  engine/sound/MS%20Basic.sf3 (SoundFont 3 container,
+             single-file form of MuseScore_General.sf2)
+
+   Authors: FluidR3 by Frank Wen (c) 2000-02; FluidR3Mono mono conversion
+   by Michael Cowgill (c) 2014-17; MuseScore_General adaptation by
+   S. Christian Collins (c) 2018-19.  The full attribution and MIT text
+   are reproduced in engine/sound/MS Basic_License.md and must be
+   included in derivative works.
+
+4. Qt / Emscripten glue scripts
+-------------------------------
+
+   Upstream: Qt for WebAssembly examples & Emscripten
+   License:  GPL-3.0-only with commercial option (Qt Company)
+   Bundled:  engine/distr/qtloader.js
+             (SPDX: LicenseRef-Qt-Commercial OR GPL-3.0-only)
+
+5. The audio worklet / driver bridge
+------------------------------------
+
+   Written by the MuseScore web port and lightly adapted here
+   (engine/distr/audiodriver.js, audioworker.js,
+   audio_worklet_processor.js, muapi.js, muimpl.js, config.js).
+   These are part of the MuseScore GPL-3.0 work.
+
+6. First-party code
+-------------------
+
+   engine/viewer.html (generic host page), src/index.js (MuseScoreWeb
+   embedding API), scripts/*, examples/demo/* — original work by YunoLab,
+   GPL-3.0-only, copyright (c) 2026.
+
+If any bundled component is missing from this list or you believe its
+license is misstated, open an issue on the project repository.
