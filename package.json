@@ -4,7 +4,7 @@
   "description": "Self-hosted MuseScore 4.x WebAssembly engine — load, edit, play, save scores in the browser. Independent open-source distribution of the engine used by the score-collab plugin.",
   "type": "module",
   "license": "GPL-3.0-only",
-  "author": "YunoLab",
+  "author": "iseri_tomori",
   "keywords": [
     "musescore",
     "music",

@@ -68,7 +68,7 @@ availability for every bundled artifact.
 -------------------
 
    engine/viewer.html (generic host page), src/index.js (MuseScoreWeb
-   embedding API), scripts/*, examples/demo/* — original work by YunoLab,
+   embedding API), scripts/*, examples/demo/* — original work,
    GPL-3.0-only, copyright (c) 2026.
 
 If any bundled component is missing from this list or you believe its
