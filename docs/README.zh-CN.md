@@ -1,7 +1,6 @@
 # mscore-web-engine（中文文档）
 
 自托管 MuseScore 4.x WebAssembly 引擎——在浏览器里加载、编辑、播放、保存乐谱。
-这是 score-collab 插件所用引擎的独立开源发行版。
 
 ## 这是什么
 
@@ -124,7 +123,7 @@ const muapi = await createMuApi({ screen, soundFont: '/my/sound.sf3', ... });
 
 ### 默认乐谱 / 模板
 
-score-collab 插件自带空模板 `.mscx`；本项目不打包它们——用 `load()` 或
+用 `load()` 或
 示例的文件选择器加载任意乐谱即可。
 
 ## 从源码构建
