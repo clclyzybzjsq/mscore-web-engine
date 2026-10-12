@@ -1,8 +1,7 @@
 # mscore-web-engine
 
 Self-hosted MuseScore 4.x WebAssembly engine — load, edit, play and save
-scores entirely in the browser. This is the independent open-source
-distribution of the engine used by the score-collab plugin.
+scores entirely in the browser. 
 
 > **Language**: 本文件为英文主版，关键章节附中文说明。中文完整版见 docs/README.zh-CN.md。
 
@@ -134,8 +133,7 @@ rebuilds from source; see `docs/BUILDING.md` for the exact toolchain and the
 
 ### Default score / templates
 
-The score-collab plugin ships blank templates as `.mscx`; this project does
-not bundle them — load any score via `load()` or the demo's file picker.
+load any score via `load()` or the demo's file picker.
 
 ## Building from source
 
@@ -155,7 +153,7 @@ attribution. Source availability and rebuild instructions are in
 
 ## 中文快速说明
 
-`mscore-web-engine` 是从 score-collab 插件中独立出来的开源 Web 版
+`mscore-web-engine` 是一个开源 Web 版
 MuseScore 引擎：加载 / 编辑 / 播放 / 保存乐谱全部在浏览器内完成，无需后端。
 
 - **快速体验**：`node scripts/serve.mjs 8000` 后打开
